@@ -1,0 +1,100 @@
+<project name="An-Naba" basedir="." default="dist">
+
+    <property name="compile.dir" value="bin"/>
+    <property name="dist.dir" value="dist"/>
+    <property name="wsdl2java.dir" value="wsdl2java"/>
+	<property name="testService.dir" value="Middleware/services/testServices/src"/>
+    <property file="build.properties"/>
+
+    <path id="classpath">
+        <fileset dir="lib/" includes="**/*jar"/>
+        <pathelement location="src"/>
+        <pathelement location="${compile.dir}"/>
+    </path>
+    
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${compile.dir}"/>
+        <mkdir dir="${dist.dir}"/>   
+    </target>
+    
+    <target name="compile" depends="init">
+        <javac destdir="${compile.dir}" srcdir="src" classpathref="classpath"/>
+    </target>  
+
+    <target name="compile-test-service" depends="init">
+        <javac destdir="${compile.dir}" srcdir="${testService.dir}" classpathref="classpath"/>
+    </target>  
+	
+	<target name="compile-wsdl2java" depends="init">
+        <javac destdir="${wsdl2java.dir}" srcdir="${wsdl2java.dir}" classpathref="classpath"/>
+    </target>    
+    
+    <target name="copy-xml" depends="compile">
+      <copy todir="${compile.dir}">
+        <fileset dir="wsdl" includes="**/*wsdl"/> 
+        <fileset dir="conf" includes="**/*properties"/> 
+      </copy>
+      <copy todir="${compile.dir}/conf">
+         <fileset dir="conf" includes="**/*xml"/>
+      </copy>
+    </target>    
+ 
+    <target name="dist" depends="copy-xml">
+        <jar destfile="${dist.dir}/${ant.project.name}.jar">
+            <fileset dir="${compile.dir}"/>
+        </jar>
+        <copy todir="build/" file="${dist.dir}/${ant.project.name}.jar"/>
+    </target>    
+
+    <target name="dist-test-service" depends="copy-xml">
+        <jar destfile="${dist.dir}/${ant.project.name}.jar">
+            <fileset dir="${compile.dir}"/>
+        </jar>
+        <copy todir="build/" file="${dist.dir}/${ant.project.name}.jar"/>
+    </target>    
+	
+    <target name="distwsdl2java" depends="compile-wsdl2java">
+        <jar destfile="${dist.dir}/wsdl2javaresult.jar">
+            <fileset dir="${wsdl2java.dir}"/>
+        </jar>
+        <copy todir="build/" file="${dist.dir}/wsdl2javaresult.jar"/>
+    </target>     
+    <target name="clean">
+        <delete dir="${compile.dir}"/>
+        <delete dir="${dist.dir}/${ant.project.name}.jar"/>
+    </target>
+
+   <target name="run-feeder-client">
+	  <java classname="org.naba.client.sub.aggregatedcontent.main.FeederClient" fork="yes" failonerror="true" maxmemory="128m">
+	    <classpath>
+	       <path refid="classpath"/>
+	       <path location="${build.dir}/classes"/>
+	    </classpath>
+	    <jvmarg value="-Dlog.path=logs/"/>
+	  </java>
+   </target>
+
+   <target name="run-wsdl-java">
+	  <java classname="org.apache.axis.wsdl.WSDL2Java" fork="yes" failonerror="true" maxmemory="128m">
+	    <classpath>
+	       <path refid="classpath"/>
+	       <path location="${build.dir}/classes"/>
+	    </classpath>
+	    <jvmarg value="-Dlog.path=logs/"/>
+	    <arg value="ContentService.wsdl"/>
+	    <arg value="-o wsdl2java/"/>
+	    <arg value="-p org.naba.client.sub.aggregatedcontent.model"/>
+	  </java>
+   </target>
+   
+   <target name="test-db">
+	  <java classname="org.naba.client.sub.aggregatedcontent.test.DBTest" fork="yes" failonerror="true" maxmemory="128m">
+	    <classpath>
+	       <path refid="classpath"/>
+	       <path location="${build.dir}/classes"/>
+	    </classpath>
+	    <jvmarg value="-Dlog.path=logs/"/>
+	  </java>
+   </target>
+</project>
