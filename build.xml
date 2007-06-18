@@ -1,8 +1,15 @@
 <project name="An-Naba" basedir="." default="dist">
 
     <property name="compile.dir" value="bin"/>
+	
+	<property name="compile.mdlwr.dir" value="Middleware/bin"/>
+	<property name="build.mdlwr.dir" value="Middleware/build"/>
+	<property name="conf.mdlwr.dir" value="Middleware/config"/>
+	
+	<property name="lib.dir" value="lib"/>
     <property name="dist.dir" value="dist"/>
     <property name="wsdl2java.dir" value="wsdl2java"/>
+	
 	<property name="testService.dir" value="Middleware/services/testServices/src"/>
     <property file="build.properties"/>
 
@@ -16,38 +23,68 @@
         <tstamp/>
         <mkdir dir="${compile.dir}"/>
         <mkdir dir="${dist.dir}"/>   
+    	<mkdir dir="${build.mdlwr.dir}/WEB-INF"/>
+    	<mkdir dir="${build.mdlwr.dir}/WEB-INF/classes"/>
+    	<mkdir dir="${build.mdlwr.dir}/WEB-INF/lib"/>
     </target>
     
+	<target name="clean">
+        <delete dir="${compile.dir}"/>
+        <delete dir="${dist.dir}"/>
+    	<delete dir="${build.mdlwr.dir}/WEB-INF"/>
+    	<delete dir="${build.mdlwr.dir}/WEB-INF/classes"/>
+    	<delete dir="${build.mdlwr.dir}/WEB-INF/lib"/>
+    </target>
+	
     <target name="compile" depends="init">
         <javac destdir="${compile.dir}" srcdir="src" classpathref="classpath"/>
     </target>  
 
     <target name="compile-test-service" depends="init">
-        <javac destdir="${compile.dir}" srcdir="${testService.dir}" classpathref="classpath"/>
+        <javac destdir="${compile.mdlwr.dir}" srcdir="${testService.dir}" classpathref="classpath"/>
     </target>  
 	
 	<target name="compile-wsdl2java" depends="init">
         <javac destdir="${wsdl2java.dir}" srcdir="${wsdl2java.dir}" classpathref="classpath"/>
     </target>    
     
-    <target name="copy-xml" depends="compile">
+    <target name="client-copy-xml" depends="compile">
       <copy todir="${compile.dir}">
         <fileset dir="wsdl" includes="**/*wsdl"/> 
         <fileset dir="conf" includes="**/*properties"/> 
       </copy>
       <copy todir="${compile.dir}/conf">
-         <fileset dir="conf" includes="**/*xml"/>
+         <fileset dir="conf" includes ="**/*xml"/>
       </copy>
-    </target>    
- 
-    <target name="dist" depends="copy-xml">
+    </target>  
+	
+	<target name="mdlwr-copy-file" depends="compile-test-service">
+	      <copy todir="${build.mdlwr.dir}/WEB-INF/">
+	        <fileset dir="Middleware/config" includes="**/*wsdd"/> 
+	        <fileset dir="Middleware/config" includes="**/*xml"/> 
+	      </copy>
+	      <copy todir="${build.mdlwr.dir}/WEB-INF/classes">
+	         <fileset dir="${compile.mdlwr.dir}" includes ="**/*"/>
+	      </copy>
+	      <copy todir="${build.mdlwr.dir}/WEB-INF/lib">
+	      	<fileset dir="${lib.dir}" includes="**/*jar"/> 
+	      </copy>
+	</target>  
+	
+    <target name="mdlwr-war" depends="mdlwr-copy-file">
+        <zip destfile="${dist.dir}/war-mdlwr.war">
+            <zipfileset dir="Middleware/build"/>
+          </zip>
+     </target>
+    
+	<target name="dist" depends="client-copy-xml">
         <jar destfile="${dist.dir}/${ant.project.name}.jar">
             <fileset dir="${compile.dir}"/>
         </jar>
         <copy todir="build/" file="${dist.dir}/${ant.project.name}.jar"/>
     </target>    
 
-    <target name="dist-test-service" depends="copy-xml">
+    <target name="dist-test-service" depends="client-copy-xml">
         <jar destfile="${dist.dir}/${ant.project.name}.jar">
             <fileset dir="${compile.dir}"/>
         </jar>
@@ -60,10 +97,6 @@
         </jar>
         <copy todir="build/" file="${dist.dir}/wsdl2javaresult.jar"/>
     </target>     
-    <target name="clean">
-        <delete dir="${compile.dir}"/>
-        <delete dir="${dist.dir}/${ant.project.name}.jar"/>
-    </target>
 
    <target name="run-feeder-client">
 	  <java classname="org.naba.client.sub.aggregatedcontent.main.FeederClient" fork="yes" failonerror="true" maxmemory="128m">
