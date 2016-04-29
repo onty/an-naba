@@ -1,0 +1,1 @@
+This project targeted for Pesantren and other Islamic organization to provide their needs for news content, within the bandwidth constraint they might have.
